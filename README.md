@@ -14,3 +14,7 @@ You are free to use all my tools/scripts for your environment as long as you acc
 I'll focus on generally Performance on ESXi hosts and Networking side of Virtualized Systems. So you will find scripts or loops to check your environment. Suggestions to fix them as well.
 
 You will also find some sort of suggestions to make your Datacenter Great Again! :)
+
+#how can you reach me?
+
+Simply, mail me at : tolgahan_y [at] yahoo [dot] com [dot] tr
