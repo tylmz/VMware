@@ -15,6 +15,6 @@ I'll focus on generally Performance on ESXi hosts and Networking side of Virtual
 
 You will also find some sort of suggestions to make your Datacenter Great Again! :)
 
-#how can you reach me?
+# how can you reach me?
 
 Simply, mail me at : tolgahan_y [at] yahoo [dot] com [dot] tr
