@@ -1,0 +1,39 @@
+Check DROP and Buffer Issues on Script Server or Live Session
+Created by Tolgahan Yilmaz (c) on Sep 26, 2019
+
+For live Buffer check and DROPS on vNIC/vSwitch Level ; (run against ESXi shell)
+
+for i in `vsish -e ls /net/portsets/ | cut -c 1- | sed 's:/.*::'`; do for p in `vsish -e ls /net/portsets/$i/ports | cut -c 1- | sed 's:/.*::'`; do vsish -e cat /net/portsets/$i/ports/$p/status | grep "clientName" >> /tmp/buffer.txt; vsish -e cat /net/portsets/$i/ports/$p/stats | egrep -E "droppedTx|droppedRx" >> /tmp/buffer.txt; vsish -e cat /net/portsets/$i/ports/$p/vmxnet3/rxSummary 2>/dev/null  | egrep -E "running out of buffers|1st ring size|of times the 1st ring is full" >> /tmp/buffer.txt; echo "---------------------------" >> /tmp/buffer.txt; done done;
+
+Then you can read file with;
+
+cat /tmp/buffer.txt
+
+Example Output;
+
+   clientName:Management <----- MANAGEMENT PORT OF ESXi hosts
+   droppedTx:0
+   droppedRx:0
+---------------------------
+   clientName:vmnic2
+   droppedTx:0           <----- If you see drops here, Check TSO, MTU and TOR as well.
+   droppedRx:0           
+---------------------------
+   clientName:Management
+   droppedTx:0
+   droppedRx:0
+---------------------------
+   clientName:vmnic0
+   droppedTx:1
+   droppedRx:25488003   <------ If drops are here, that means vSwitch/ESXi may not pull packets because of following reasons ; RSS, CPU overload, bad NIC driver,  
+---------------------------
+   clientName:vmnic1
+   droppedTx:51
+   droppedRx:37788939
+---------------------------
+   clientName:istesx3.eth3
+   droppedTx:17518
+   droppedRx:876927557  <------- This means Guest OS cannot pull packets because of following reasons; RSS on Guest Level, CPU overload, bad VMXnet3 Driver, Small RX buffer, Small Ring Size
+   running out of buffers:3749   <------ Small Rx buffer is not enough to process packets in timely manner.
+   1st ring size:1024                
+   # of times the 1st ring is full:131 <----- 1st Ring used for packets <1500 bytes, increase ring size to handle such situation, best size is enough size to keep ring unfilled.
