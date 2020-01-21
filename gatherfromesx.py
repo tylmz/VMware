@@ -1,6 +1,5 @@
 import sshtunnel
 import paramiko
-
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 hostlist = {}
@@ -22,8 +21,8 @@ ssh.close()
 
 print(hostlist)
 uname = "root"
-passwd = input("please enter password :")
-cmdlet = {'touch "/vmfs/volumes/NFS10/`hostname`.txt"'}
+passwd = "VMware1!"  #input("please enter password :")
+cmdlet = {'touch "/vmfs/volumes/NFS10/`hostname`.txt"','esxcli network nic list > "/vmfs/volumes/NFS10/niclist.`hostname`.txt"'}
 
 for hname in hostlist:
     ssh.connect(hostname=hname, username=uname, password=passwd)
