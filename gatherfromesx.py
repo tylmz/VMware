@@ -23,9 +23,6 @@ class Infra_connect:
     
     def get_hosts():
         try:
-        ##  ssh.connect(hostname="ankvc.datamarket.com",#str(input('vCenter Address :')),
-        ##            username="root",#str(input('Username :')),
-        ##            password="VMware1!")#str(input('Password :')))
             ssh.connect(hostname=vc.hostname,username=vc.username,password=vc.password)
             for query in hostquery:
                 print(query)
