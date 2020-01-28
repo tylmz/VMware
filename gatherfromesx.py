@@ -20,10 +20,13 @@ class Infra_connect:
         self.username = username
         self.password = password
         
-    
-    def get_hosts():
+    def get_hosts(hostlist):
+        hostlist = []
         try:
-            ssh.connect(hostname=vc.hostname,username=vc.username,password=vc.password)
+            ##  ssh.connect(hostname="ankvc.datamarket.com",#str(input('vCenter Address :')),
+            ##            username="root",#str(input('Username :')),
+            ##            password="VMware1!")#str(input('Password :')))
+            ssh.connect(hostname=vc.hostname, username=vc.username, password=vc.password)
             for query in hostquery:
                 print(query)
                 stdin, stdout, stderr = ssh.exec_command(query)
@@ -32,15 +35,16 @@ class Infra_connect:
                 stdout.close()
                 stderr.close()
                 time.sleep(1)
-                
+
             with ssh.open_sftp() as sftp, \
-                sftp.open('/tmp/hostlist') as f:
+                    sftp.open('/tmp/hostlist') as f:
                 hostlist = [line.strip() for line in f]
-                print(hostlist)
                 del hostlist[-1]
+                return hostlist
             ssh.close()
         except:
-          print("Could not connect to vCenter")
+            print("Could not connect to vCenter")
+
 
 def checkport(host_ip, port=22):
     try:
@@ -55,62 +59,59 @@ def checkport(host_ip, port=22):
     return True
 
 
-def rem_host ():
+def rem_host():
     for hname in hostlist:
-        tresult=checkport(hname, port=22)
-        if tresult == False:
-            askit=input('SSH is disabled for this host do you want to continue yes/no:')
-            if askit == "yes":              
+        while checkport(hname, port=22) == False:
+            askit = input('SSH is disabled for this host do you want to continue yes/no:')
+            if askit == "yes":
                 print("SSH of", hname, "is disabled will not collect data from this host")
                 hostlist.remove(hname)
-                return False
+                return rem_host()
             else:
                 return True
 
 
 if args.hostname == "hostname":
-                cmdlet = {'touch "/vmfs/volumes/NFS10/`hostname`.txt"'}
+    cmdlet = {'touch "/vmfs/volumes/NFS10/`hostname`.txt"'}
 elif args.niclist == "niclist":
-                cmdlet = {'esxcli network nic list > "/vmfs/volumes/NFS10/niclist.`hostname`.txt"'}
+    cmdlet = {'esxcli network nic list > "/vmfs/volumes/NFS10/niclist.`hostname`.txt"'}
 elif args.adapters == "adapters":
-                cmdlet = {'esxcli storage core adapter list > "/vmfs/volumes/NFS10/adapter.`hostname`.txt"'}
+    cmdlet = {'esxcli storage core adapter list > "/vmfs/volumes/NFS10/adapter.`hostname`.txt"'}
 elif args.device == "device":
-                cmdlet = {'esxcli storage core device list > "/vmfs/volumes/NFS10/coredevice.`hostname`.txt"'}
+    cmdlet = {'esxcli storage core device list > "/vmfs/volumes/NFS10/coredevice.`hostname`.txt"'}
 else:
-            cmdlet = ['echo "`hostname`" >> "/vmfs/volumes/NFS10/environment.txt" ',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "NIC details for `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'esxcli network nic list >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "HBA details for `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'esxcli storage core adapter list >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "BIOS details `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'vsish -e get /hardware/bios/biosInfo | egrep -Evi "major|minor|controller" >> "/vmfs/volumes/NFS10/environment.txt"',
-                      'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"'
-                      ]
+    cmdlet = ['echo "`hostname`" >> "/vmfs/volumes/NFS10/environment.txt" ',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "NIC details for `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'esxcli network nic list >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "HBA details for `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'esxcli storage core adapter list >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "BIOS details `hostname`" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'vsish -e get /hardware/bios/biosInfo | egrep -Evi "major|minor|controller" >> "/vmfs/volumes/NFS10/environment.txt"',
+              'echo "\n" >> "/vmfs/volumes/NFS10/environment.txt"'
+              ]
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-hostquery = ['shell \n chsh -s /bin/bash \n /opt/vmware/vpostgres/current/bin/psql -U postgres VCDB -c "select ip_address from vpx_host;" | egrep -Evi "rows|ip|--" > /tmp/hostlist'
-             ]
+hostquery = [
+    'shell \n chsh -s /bin/bash \n /opt/vmware/vpostgres/current/bin/psql -U postgres VCDB -c "select ip_address from vpx_host;" | egrep -Evi "rows|ip|--" > /tmp/hostlist'
+    ]
 
-vc = Infra_connect(str(input('vCenter Address :')), str(input('Username :')),str(input('Password :')))
-Infra_connect.get_hosts()
-hostlist = Infra_connect.get_hosts()
+vc = Infra_connect(str(input('vCenter Address :')), str(input('Username :')), str(input('Password :')))
+hostlist = Infra_connect.get_hosts(hostquery)
 print(hostlist)
-rem_host=rem_host()
+rem_host = rem_host()
 if rem_host == True:
     sys.exit("Please open all SSH ports")
 
-   
 uname = "root"
-passwd = "VMware1!"  #input("please enter password :")
-
+passwd = "VMware1!"  # input("please enter password :")
 
 for hname in hostlist:
     ssh.connect(hostname=hname, username=uname, password=passwd)
@@ -118,8 +119,8 @@ for hname in hostlist:
         print(cmd)
         stdin, stdout, stderr = ssh.exec_command(cmd)
         stdin.close()
-        #print(repr(stdout.read()))
-        #print(repr(stderr.read()))
+        # print(repr(stdout.read()))
+        # print(repr(stderr.read()))
         stdout.close()
         stderr.close()
         time.sleep(1)
