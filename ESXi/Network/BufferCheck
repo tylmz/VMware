@@ -9,6 +9,7 @@ Then you can read file with;
 
 cat /tmp/buffer.txt
 
+
 Example Output;
 
    clientName:Management <----- MANAGEMENT PORT OF ESXi hosts
