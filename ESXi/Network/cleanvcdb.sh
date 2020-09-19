@@ -1,4 +1,4 @@
-This script must run at vCenter server with root privileges. It basically stops vpxd, cleans task and event tables then start
+This script must be executed in vCenter server with root privileges. It basically stops vpxd, cleans task and event tables then start
 vpxd again. 
 
 Verified against vCenter Server Appliance 6.7
