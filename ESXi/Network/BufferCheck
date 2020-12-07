@@ -9,7 +9,7 @@ for i in `vsish -e ls /net/portsets/ | cut -c 1- | sed 's:/.*::'`; do for p in `
 
 if [ "$BLEG" != xxx ]; then command; fi
 
-```shellscript
+```
 Then you can read file with;
 
 cat /tmp/buffer.txt
