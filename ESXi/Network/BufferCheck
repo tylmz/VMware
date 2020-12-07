@@ -5,11 +5,6 @@ For live Buffer check and DROPS on vNIC/vSwitch Level ; (run against ESXi shell)
 
 for i in `vsish -e ls /net/portsets/ | cut -c 1- | sed 's:/.*::'`; do for p in `vsish -e ls /net/portsets/$i/ports | cut -c 1- | sed 's:/.*::'`; do vsish -e cat /net/portsets/$i/ports/$p/status | grep "clientName" >> /tmp/buffer.txt; vsish -e cat /net/portsets/$i/ports/$p/stats | egrep -E "droppedTx|droppedRx" >> /tmp/buffer.txt; vsish -e cat /net/portsets/$i/ports/$p/vmxnet3/rxSummary 2>/dev/null  | egrep -E "running out of buffers|1st ring size|of times the 1st ring is full" >> /tmp/buffer.txt; echo "---------------------------" >> /tmp/buffer.txt; done done;
 
-```shell
-
-if [ "$BLEG" != xxx ]; then command; fi
-
-```
 Then you can read file with;
 
 cat /tmp/buffer.txt
