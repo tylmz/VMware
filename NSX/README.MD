@@ -14,8 +14,8 @@
 - Rules in Policy Sections (defaults excluded)
 
 **What it needs?**
--Needs more capability to move even VM, vnic, port based defined groups.
--Needs capability to move other service types and nested things.
+- Needs more capability to move even VM, vnic, port based defined groups.
+- Needs capability to move other service types and nested things.
 
 **Development?**
 - If needed i will develop this more. This was just a code written in hours to move one of my customer's environment.
