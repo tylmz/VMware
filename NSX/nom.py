@@ -14,9 +14,9 @@ parser.add_argument("--rules",action='store_true', help='makes moves great again
 args = parser.parse_args()
 
 user = 'admin'
-password = 'password'
-dIP = 'Destination NSX-T Manager'
-sIP = 'Source NSX-T Manager'
+password = 'VMware1!VMware1!'
+dIP = '192.168.18.14'
+sIP = '192.168.18.14'
 
 def mainmenu():
     print()
@@ -27,7 +27,6 @@ def mainmenu():
                       B: Migrate Services
                       C: Migrate Rules
                       Q: Terminate ME!
-
                       Please enter your choice: """)    
     if choice == "A" or choice == "a":
         groupsmenu()
@@ -49,7 +48,6 @@ def groupsmenu():
                       A: Parse Source Groups
                       B: Migrate Groups
                       P: Main Menu
-
                       Please enter your choice: """)
     if choice == "A" or choice == "a":
         getgroups()
@@ -72,7 +70,6 @@ def servicesmenu():
                       A: Parse Source Services
                       B: Migrate Services
                       P: Main Menu
-
                       Please enter your choice: """)
     if choice == "A" or choice == "a":
         getservices()
@@ -96,7 +93,6 @@ def rulemenu():
                       B: Parse source rules, migrate policies
                       C: Migrate Rules to Destination
                       P: Main Menu
-
                       Please enter your choice: """)
     if choice == "A" or choice == "a":
         getpolicies()
@@ -184,7 +180,24 @@ def getgroups():
     global groups
     response = res.json()
     groups = response["results"]
+    cursor = response["cursor"]
+    result_count = response["result_count"]
+    print("Current cursor number: ",cursor)
+    print("Total NSX-T Groups number :", result_count)
     glen = len(groups)
+    print(groups)
+    while glen < result_count:
+        try:
+            pagires = requests.get(f"https://{sIP}/policy/api/v1/infra/domains/default/groups/?cursor={cursor}", verify=False, auth=HTTPBasicAuth(user, password))
+            response = pagires.json()
+            nextpage = response["results"]
+            groups.extend(nextpage)
+            cursor = response["cursor"]
+            print(glen, "Groups has been parsed")
+        except (IndexError, KeyError):
+            print("All Groups has been parsed")
+        glen = len(groups)
+    print(groups)
     print(glen)
 
     
