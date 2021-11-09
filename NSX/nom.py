@@ -2,6 +2,7 @@ import json
 import requests
 import argparse
 import os
+import re
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -89,22 +90,22 @@ def rulemenu():
     print("************tyilmaz**************")
     print("*******NSX-T Object MOVR*********")
     choice = input("""
-                      A: Get source policies
-                      B: Parse source rules, migrate policies
+                      A: Parse policies
+                      B: Parse source rules, Migrate policies
                       C: Migrate Rules to Destination
                       P: Main Menu
                       Please enter your choice: """)
     if choice == "A" or choice == "a":
         getpolicies()
-        print("source policy'ler okundu")
+        print("Policy Parsing Done!")
         rulemenu()
     elif choice == "B" or choice == "b":
         exportpolicies()
-        print("Source rule'lar parse edildi")
+        print("Rule Parsing Done!")
         rulemenu()
     elif choice == "C" or choice == "c":
         writerules()
-        print("Tüm kurallar yazıldı")
+        print("Rules have been migrated!")
         rulemenu()
     elif choice == "P" or choice == "p":
         mainmenu()
@@ -145,11 +146,15 @@ def exportpolicies():
     for i in range(1, poln-1):
         polname = policies[i]["display_name"]
         polcat = policies[i]["category"]
+        #replace blank or other preventing characters with "-" (this characters block creating paths)
+        recus = re.sub('[ /()]', '-', polname)
         print(polname)
         print(polcat)
-        res = requests.get(f"https://{sIP}/policy/api/v1/infra/domains/default/security-policies/{polname}/rules", verify=False, auth=HTTPBasicAuth(user, password))
+#        res = requests.get(f"https://{sIP}/policy/api/v1/infra/domains/default/security-policies/{polname}/rules", verify=False, auth=HTTPBasicAuth(user, password))
+        #for test purposes only
+        res = requests.get(f"https://{sIP}/policy/api/v1/infra/domains/default/security-policies/{recus}/rules", verify=False, auth=HTTPBasicAuth(user, password))
         response = res.json()
-        with open(f"rules/{polname}.rule", "w") as outfile:
+        with open(f"rules/{recus}.rule", "w") as outfile:
             json.dump(response, outfile)
         outfile.close()
         pjson = {
@@ -167,9 +172,18 @@ def exportpolicies():
         "_revision": 0
         }        
         pdata = json.dumps(pjson)
-        url = f"https://{dIP}/policy/api/v1/infra/domains/default/security-policies/{polname}"
+        url = f"https://{dIP}/policy/api/v1/infra/domains/default/security-policies/{recus}"
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         resp = requests.patch(url, data=pdata, headers=headers, verify=False, auth=HTTPBasicAuth(user, password))
+        #write logs to policylogs.txt file (policyname, category, response).
+        with open(f"policylogs.txt", "a") as policylogs:
+            policylogs.write(polname)
+            policylogs.write("\t")
+            policylogs.write(polcat)
+            policylogs.write("\t")
+            policylogs.write(str(resp))
+            policylogs.write("\n")
+        policylogs.close()
         print(resp)        
         i=i+1
 
@@ -298,14 +312,16 @@ def writeservices():
 def writerules():
     for i in range(1, poln-1):
         polname = policies[i]["display_name"]
+        recus = re.sub('[ /()]', '-', polname)
         # policy içeriklerini tek tek okuyalım
-        f = open(f"rules/{polname}.rule", "r")
+        f = open(f"rules/{recus}.rule", "r")
         data = json.loads(f.read())
         r = data["results"]
         dlenght = len(r)
         #okuyup öğrendiklerimizi yazalım
         for t in range(dlenght):
             ruleid = r[t]["display_name"]
+            recusruleid = re.sub('[ /()]', '-', ruleid)
             sgroup = r[t]["source_groups"]
             dgroup = r[t]["destination_groups"]
             services = r[t]["services"]
@@ -314,8 +330,8 @@ def writerules():
             "resource_type": "Rule",
             "id": ruleid,
             "display_name": ruleid,
-            "path": f"/infra/domains/default/security-policies/{polname}/rules/{ruleid}",
-            "parent_path": f"/infra/domains/default/security-policies/{polname}",
+            "path": f"/infra/domains/default/security-policies/{recus}/rules/{recusruleid}",
+            "parent_path": f"/infra/domains/default/security-policies/{recus}",
             "sources_excluded": "false",
             "destinations_excluded": "false",
             "source_groups": sgroup,
@@ -338,7 +354,7 @@ def writerules():
             }     
             print(ruleid)
             ruledata = json.dumps(revjson)
-            url = f"https://{dIP}/policy/api/v1/infra/domains/default/security-policies/{polname}/rules/{ruleid}"
+            url = f"https://{dIP}/policy/api/v1/infra/domains/default/security-policies/{recus}/rules/{recusruleid}"
             headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
             resp = requests.patch(url, data=ruledata, headers=headers, verify=False, auth=HTTPBasicAuth(user, password))
             print(resp)
